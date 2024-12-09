@@ -8,8 +8,8 @@ This project and everyone participating in it are governed by the offvsix Code o
 
 ## Reporting Bugs or Feature Requests
 
-- Open a new issue [here](https://github.com/exaluc/offvsix/issues/new).
-- Ensure the bug was not already reported by searching on GitHub under [Issues](https://github.com/exaluc/offvsix/issues).
+- Open a new issue [here](https://github.com/gni/offvsix/issues/new).
+- Ensure the bug was not already reported by searching on GitHub under [Issues](https://github.com/gni/offvsix/issues).
 - Be as detailed as possible.
 
 ## How Can I Contribute?
@@ -20,7 +20,7 @@ Follow the guidelines mentioned above.
 
 ### Suggesting Enhancements
 
-If you have a neat idea for a feature, open an issue [here](https://github.com/exaluc/offvsix/issues/new) and we'll look into it.
+If you have a neat idea for a feature, open an issue [here](https://github.com/gni/offvsix/issues/new) and we'll look into it.
 
 ### Pull Requests
 
