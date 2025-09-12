@@ -40,6 +40,14 @@ For example:
 ```bash
 offvsix ms-python.python
 ```
+#### Finding the publisher and extension name
+
+When viewing the extension on the marketplace the publisher and extension name will be in URL.
+
+For example:
+```
+https://marketplace.visualstudio.com/items?itemName=${publisher}.${extension}
+```
 
 ### Using a Text File:
 
