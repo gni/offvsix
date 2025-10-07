@@ -61,9 +61,21 @@ class VSCodeExtensionDownloader:
                 version = specific_version
             else:
                 try:
-                    version = extension_data["results"][0]["extensions"][0]["versions"][0]["version"]
-                except KeyError:
-                    self._print("Failed to get extension version")
+                    results = extension_data["results"]
+                    if not results:
+                        self._print(f"Extension not found: {publisher}.{extension_name}")
+                        return
+                    exts = results[0]["extensions"]
+                    if not exts:
+                        self._print(f"Extension not found: {publisher}.{extension_name}")
+                        return
+                    vers = exts[0]["versions"]
+                    if not vers:
+                        self._print(f"Extension not found: {publisher}.{extension_name}")
+                        return
+                    version = vers[0]["version"]
+                except (KeyError, IndexError, TypeError):
+                    self._print(f"Extension not found: {publisher}.{extension_name}")
                     return
 
             if destination:
