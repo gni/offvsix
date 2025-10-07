@@ -19,7 +19,14 @@ class VSCodeExtensionDownloader:
             print(msg)
 
     def download(self):
-        publisher, extension_name = self.extension.split('.')
+        ext = (self.extension or "").strip()
+        if "." not in ext:
+            self._print(f"Invalid extension identifier: {ext}. Use the form publisher.extension")
+            return
+        publisher, extension_name = ext.split(".", 1)
+        if not publisher or not extension_name:
+            self._print(f"Invalid extension identifier: {ext}. Use the form publisher.extension")
+            return
         self._print(f"{'=' * 50}")
         self._print(f"Downloading {publisher}.{extension_name}")
         self._print(f"{'=' * 50}")
@@ -50,31 +57,43 @@ class VSCodeExtensionDownloader:
                 session.proxies = {"http": proxy, "https": proxy}
 
             self._print("Querying Marketplace API...")
-            response = session.post(api_url, headers=headers, data=payload)
+            try:
+                response = session.post(api_url, headers=headers, data=payload, timeout=20)
+            except requests.RequestException as e:
+                self._print(f"Failed to query Marketplace API: {e}")
+                return
 
             if response.status_code != 200:
                 self._print("Failed to query Marketplace API")
                 return
 
-            extension_data = response.json()
+            try:
+                extension_data = response.json()
+            except ValueError:
+                self._print("Failed to parse Marketplace API response")
+                return
+
             if specific_version:
                 version = specific_version
             else:
                 try:
-                    results = extension_data["results"]
+                    results = extension_data.get("results") or []
                     if not results:
                         self._print(f"Extension not found: {publisher}.{extension_name}")
                         return
-                    exts = results[0]["extensions"]
+                    exts = results[0].get("extensions") or []
                     if not exts:
                         self._print(f"Extension not found: {publisher}.{extension_name}")
                         return
-                    vers = exts[0]["versions"]
+                    vers = exts[0].get("versions") or []
                     if not vers:
                         self._print(f"Extension not found: {publisher}.{extension_name}")
                         return
-                    version = vers[0]["version"]
-                except (KeyError, IndexError, TypeError):
+                    version = vers[0].get("version")
+                    if not version:
+                        self._print(f"Extension not found: {publisher}.{extension_name}")
+                        return
+                except (AttributeError, IndexError, TypeError):
                     self._print(f"Extension not found: {publisher}.{extension_name}")
                     return
 
@@ -95,7 +114,11 @@ class VSCodeExtensionDownloader:
             download_url = f"https://{publisher}.gallery.vsassets.io/_apis/public/gallery/publisher/{publisher}/extension/{extension_name}/{version}/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
 
             self._print(f"Downloading version {version}...")
-            download_response = session.get(download_url)
+            try:
+                download_response = session.get(download_url, timeout=60)
+            except requests.RequestException as e:
+                self._print(f"Failed to download asset: {e}")
+                return
 
             if download_response.status_code == 200:
                 with open(file_path, "wb") as f:
@@ -107,14 +130,16 @@ class VSCodeExtensionDownloader:
                 self._print(f"Failed to download {publisher}.{extension_name}-{version}.vsix")
 
 def download_plugins_from_file(file_path: str, proxy=None, version=None, destination=None, no_cache=False, verbose=False):
-    with open(file_path, 'r') as f:
+    if not os.path.exists(file_path):
+        print(f"File not found: {file_path}")
+        return
+    with open(file_path, 'r', encoding='utf-8') as f:
         extensions = f.readlines()
     for extension in extensions:
         extension = extension.strip()
         if extension:
             downloader = VSCodeExtensionDownloader(extension, proxy, version, destination, no_cache, verbose)
             downloader.download()
-
 
 @click.command()
 @click.argument('extension', nargs=1, required=False)
