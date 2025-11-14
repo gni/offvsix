@@ -2,17 +2,17 @@ import click
 import requests
 import json
 import os
-from typing import List
 
 class VSCodeExtensionDownloader:
 
-    def __init__(self, extension, proxy=None, version=None, destination=None, no_cache=False, print=False):
+    def __init__(self, extension, proxy=None, version=None, destination=None, no_cache=False, print=False, target_platform=None):
         self.extension = extension
         self.proxy = proxy
         self.version = version
         self.destination = destination
         self.no_cache = no_cache
         self.print = print
+        self.target_platform = target_platform
 
     def _print(self, msg):
         if self.print:
@@ -146,7 +146,14 @@ class VSCodeExtensionDownloader:
                     "cached": True
                 }
 
-            download_url = f"https://{publisher}.gallery.vsassets.io/_apis/public/gallery/publisher/{publisher}/extension/{extension_name}/{version}/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
+            if self.target_platform:
+                download_url = (
+                    f"https://marketplace.visualstudio.com/_apis/public/gallery/publishers/"
+                    f"{publisher}/vsextensions/{extension_name}/{version}/vspackage"
+                    f"?targetPlatform={self.target_platform}"
+                )
+            else:
+                download_url = f"https://{publisher}.gallery.vsassets.io/_apis/public/gallery/publisher/{publisher}/extension/{extension_name}/{version}/assetbyname/Microsoft.VisualStudio.Services.VSIXPackage"
 
             self._print(f"Downloading version {version}...")
             try:
@@ -185,7 +192,7 @@ class VSCodeExtensionDownloader:
                     "message": f"Failed to download {publisher}.{extension_name}-{version}.vsix"
                 }
 
-def download_plugins_from_file(file_path: str, proxy=None, version=None, destination=None, no_cache=False, verbose=False):
+def download_plugins_from_file(file_path: str, proxy=None, version=None, destination=None, no_cache=False, verbose=False, target_platform=None):
     results = []
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
@@ -195,7 +202,7 @@ def download_plugins_from_file(file_path: str, proxy=None, version=None, destina
     for extension in extensions:
         extension = extension.strip()
         if extension:
-            downloader = VSCodeExtensionDownloader(extension, proxy, version, destination, no_cache, verbose)
+            downloader = VSCodeExtensionDownloader(extension, proxy, version, destination, no_cache, verbose, target_platform=target_platform)
             res = downloader.download()
             results.append(res)
     return results
@@ -209,13 +216,14 @@ def download_plugins_from_file(file_path: str, proxy=None, version=None, destina
 @click.option('--file', default=None, help='Path to a text file with extensions to download, one per line.')
 @click.option('--proxy', default=None, help='Proxy URL.')
 @click.option('--json', 'as_json', is_flag=True, default=False, help='Output result as JSON.')
-def cli(extension, file, proxy, version, destination, no_cache, no_print, as_json):
+@click.option('--target-platform', default=None, help='VS Code target platform (e.g. win32-x64, linux-x64, darwin-arm64).')
+def cli(extension, file, proxy, version, destination, no_cache, no_print, as_json, target_platform):
     if file:
-        results = download_plugins_from_file(file, proxy, version, destination, no_cache, False if as_json else no_print)
+        results = download_plugins_from_file(file, proxy, version, destination, no_cache, False if as_json else no_print, target_platform=target_platform)
         if as_json:
             print(json.dumps({"results": results}, ensure_ascii=False))
     elif extension:
-        downloader = VSCodeExtensionDownloader(extension, proxy, version, destination, no_cache, False if as_json else no_print)
+        downloader = VSCodeExtensionDownloader(extension, proxy, version, destination, no_cache, False if as_json else no_print, target_platform=target_platform)
         res = downloader.download()
         if as_json:
             print(json.dumps(res, ensure_ascii=False))

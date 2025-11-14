@@ -62,6 +62,8 @@ code --install-extension ./extensions/ms-python.python-2023.17.12561009.vsix
 - `--no-print` without output.
 - `--file` to specify a text file containing a list of extensions to download.
 - `--proxy` to use a proxy server.
+- `--json`  Output result as JSON.
+- `--target-platform` VS Code target platform (e.g. win32-x64, linux-x64, darwin-arm64).
 
 ## Contributing
 
